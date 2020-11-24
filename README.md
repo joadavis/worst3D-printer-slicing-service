@@ -1,6 +1,8 @@
 # Worst3D printer slicing service
 
-Bringing the worst idea in 3D printing to the cloud
+Bringing the worst idea in 3D printing to the cloud!
+
+The "Worst3D Printer" is a Python script I wrote years ago to implement a *manual* 3D printer.  The basic idea is that given the thickness of a sheet of paper that you could print out slices of a 3D model then cut them out and stack them to make the model.  Very labor intensive and prone to human error, thus the "worst" idea. :)  See https://github.com/joadavis/other-fun-projects/tree/master/worst3dprinterever-v1
 
 This is an experiment and excuse for me to try out different ways of creating a REST API for a service.
 The idea is to use Golang and as simple of a framework as possible to allow submitting slicing jobs and retrieving status and results.
