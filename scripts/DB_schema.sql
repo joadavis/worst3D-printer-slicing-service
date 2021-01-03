@@ -15,9 +15,8 @@ CREATE TABLE users
     id uuid NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
     username TEXT NOT NULL,
     email TEXT NOT NULL,
-    project_id INT,
     password TEXT NOT NULL,
-    FOREIGN KEY (project_id) REFERENCES projects (project_id)
+    
 );
 
 CREATE TABLE jobs
@@ -30,3 +29,25 @@ CREATE TABLE jobs
     FOREIGN KEY (requesting_user_id) REFERENCES users (id)
 );
 
+CREATE TABLE roles
+(
+    id int,
+    role_name TEXT NOT NULL
+);
+
+
+-- Specify the relation for an RBAC
+CREATE TABLE user_project_roles
+(
+    id uuid NOT NULL gen_random_uuid() PRIMARY KEY,
+    user_id uuid,
+    project_id int,
+    role_id int,
+    FOREIGN KEY (user_id) REFERENCES users (id),
+    FOREIGN KEY (project_id) REFERENCES projects (id),
+    FOREIGN KEY (role_id) REFERENCES roles (id),
+);
+
+
+INSERT INTO roles (id, role_name) VALUES (13, 'admin');
+INSERT INTO roles (id, role_name) VALUES (50, 'user');

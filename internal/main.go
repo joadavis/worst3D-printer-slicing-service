@@ -5,11 +5,16 @@ For license infomation (MIT), see the containing github project.
 
 As can be seen below, this version uses Gorilla Mux. It can be installed with:
 go get github.com/gorilla/mux
+And PostgreSQL with
+go get -u github.com/lib/pq
 
 I used https://dev.to/moficodes/build-your-first-rest-api-with-go-2gcj
 as a starting point.
 And added in https://semaphoreci.com/community/tutorials/building-and-testing-a-rest-api-in-go-with-gorilla-mux-and-postgresql
 for database and testing.
+
+Including running a basic postgres instance with 
+  sudo docker run -it -p 5432:5432 -d postgres
 */
 
 package main
@@ -18,6 +23,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -43,6 +49,7 @@ func HealthCheckGet(w http.ResponseWriter, r *http.Request) {
 func UserCreate(w http.ResponseWriter, r *http.Request) {
 
 }
+
 
 /* Basic functions */
 func post(w http.ResponseWriter, r *http.Request) {
@@ -99,11 +106,20 @@ func main() {
 	/worst3d/v3
 	  /user
 	  /job
+	  /project
 	  /healthcheck
 	*/
-    r := mux.NewRouter()
 
-	api := r.PathPrefix("/worst3d/v3").Subrouter()
+	//r := mux.NewRouter()
+	worstApp := Worst3DPSApp{}
+	worstApp.Initialize(
+		os.Getenv("WORST_DB_USERNAME"),
+		os.Getenv("WORST_DB_PASSWORD"),
+		os.Getenv("WORST_DB_NAME") )
+
+	//r := worstApp.Router
+
+	api := worstApp.Router.PathPrefix("/worst3d/v3").Subrouter()
 
 	api.HandleFunc("", WelcomeGet).Methods(http.MethodGet)
 	api.HandleFunc("/healthcheck", HealthCheckGet).Methods(http.MethodGet)
@@ -118,5 +134,7 @@ func main() {
 	log.Print("Spinning up the Worst3D Printer Slicing Service...")
     api.HandleFunc("/user/{userID}/comment/{commentID}", params).Methods(http.MethodGet)
 
-    log.Fatal(http.ListenAndServe(":8080", r))
+    
+
+    log.Fatal(http.ListenAndServe(":8080", worstApp.Router))
 }
