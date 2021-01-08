@@ -4,14 +4,21 @@
 /* 
 Please set up environment first
 export WORST_DB_USERNAME=postgres
-export WORST_DB_PASSWORD=
-export WORST_DB_NAME=postgres
+export WORST_DB_PASSWORD=postgres
+export WORST_DB_NAME=test_worst
 
 Then spin up a postgres instance with
 sudo docker run -it --name test-pg -e POSTGRES_PASSWORD=postgres -p 5432:5432 -d postgres
 
 And manually test connection with
 psql -h localhost -U postgres postgres
+
+Create a test database and import the schema
+CREATE DATABASE test_worst
+\c test_worst
+
+\i ../scripts/DB_schema.sql
+\q
 
 Then simply do 'go test -v'
 
@@ -37,14 +44,21 @@ import (
 var worst3dps Worst3DPSApp
 
 func TestMain(m *testing.M) {
+	// set defaults if not in env (defaults for the postgres docker container)
 	user := os.Getenv("WORST_DB_USERNAME")
 	if (user == "") {
 		user = "postgres"
 	}
-	worst3dps.Initialize(
-		os.Getenv("WORST_DB_USERNAME"),
-		os.Getenv("WORST_DB_PASSWORD"),
-		os.Getenv("WORST_DB_NAME") )
+	pass := os.Getenv("WORST_DB_PASSWORD")
+	if (pass == "") {
+		pass = "postgres"
+	}
+	dbname := os.Getenv("WORST_DB_NAME")
+	if (dbname == "") {
+		// dbname = "postgres" // seems dangerous to use the default name for testing
+		dbname = "test-worst"
+	}
+	worst3dps.Initialize(user, pass, dbname)
 
 	ensureProjTableExists()
 	code := m.Run()
@@ -52,6 +66,7 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
+// TODO: replace this with a manual procedure to just run scripts/DB_schema.sql
 func ensureProjTableExists() {
 	if _, err := worst3dps.DB.Exec(projTableCreationQuery); err != nil {
 		log.Fatal(err)
@@ -67,7 +82,7 @@ func clearProjectsTable() {
 
 const projTableCreationQuery = `CREATE TABLE IF NOT EXISTS projects
 (
-    id SERIAL,
+    id SERIAL PRIMARY KEY,
     project_name TEXT NOT NULL
 );`
 
@@ -80,6 +95,8 @@ func TestHealthCheck(t *testing.T) {
 
     checkResponseCode(t, http.StatusOK, response.Code, response)
 }
+
+// TESTS project
 
 func TestEmptyTable(t *testing.T) {
 	clearProjectsTable()
@@ -175,10 +192,17 @@ func TestDeleteProject(t *testing.T) {
     checkResponseCode(t, http.StatusNotFound, response.Code, response)
 }
 
+// TESTS user
+
+// TESTS job
+
+// TESTS role, and such stuff
+
 func TestAlwaysWorks(t *testing.T) {
 	// do nothing, always happy
 }
 
+// HELPER FUNCS
 
 // generate some projects for testing
 func addProjects(count int) {
@@ -202,7 +226,7 @@ func executeRequest(req *http.Request) *httptest.ResponseRecorder {
 
 func checkResponseCode(t *testing.T, expected, actual int, resp *httptest.ResponseRecorder) {
     if expected != actual {
-		fmt.Println(resp.Body)
+		fmt.Println(resp.Body)  // because I like lots of output
         t.Errorf("Expected response code %d. Got %d\n", expected, actual)
     }
 }

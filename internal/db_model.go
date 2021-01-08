@@ -26,11 +26,16 @@ type project struct {
 type job struct {
 	ID     string `json:"id"`
 	Status string `json:"status"`
+	RequestingUserID string `json:"requesting_user_id"`
+	ProjectID  int `json:"project_id"`
+	InputFilePath string `json:"input_file_path"`
+	OutputPath string `json:"output_path"`
 }
 
+// TODO roles and user_project_roles
 
 
-// Projects
+// Projects ----------------
 func (p *project) createProject(db *sql.DB) error {
 	err := db.QueryRow(
 		"INSERT INTO projects(id, project_name) VALUES ($1, $2) RETURNING id",
@@ -60,7 +65,7 @@ func (p *project) deleteProject(db *sql.DB) error {
 	return err
 }
 
-// plural action
+// plural action to return list of projects
 func getProjects(db *sql.DB, start, count int) ([]project, error) {
 	rows, err := db.Query(
 		"SELECT id, project_name FROM projects LIMIT $1 OFFSET $2", count, start)
@@ -82,7 +87,36 @@ func getProjects(db *sql.DB, start, count int) ([]project, error) {
 	return projects, nil
 }
 
-
+// Users ------------------------------------------
 func (u *user) getUser(db *sql.DB) error {
 	return errors.New("Not implemented")
 }
+
+// TODO C_UD for user
+
+func getUserJobs(db *sql.DB, user_id string, start, count int) ([]job, error) {
+	rows, err := db.Query(
+		"SELECT id, status, requesting_user_id, project_id, input_file_path, output_path " +
+		"from jobs where requesting_user_id = $1 LIMIT $2 OFFSET $3", user_id, start, count)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	jobs := []job{}
+
+	for rows.Next() {
+		var j job
+		if err := rows.Scan(&j.ID, &j.Status, &j.RequestingUserID, &j.ProjectID, &j.InputFilePath, &j.OutputPath); err != nil {
+			return nil, err
+		}
+		jobs = append(jobs, j)
+	}
+	return jobs, nil
+}
+
+// TODO CRUD for job
+// TODO also need to include a api for retrieving the file results
+
+// TODO get all jobs for a user
